@@ -66,20 +66,25 @@ class Gun:
 
 class Ball:
     def __init__(self):
-        self.x = 50
-        self.y = 400
-        self.dx = 2
-        self.dy = 0
-        self.r = 10
+        x = self.x = 50
+        y = self.y = 400
+        dx = self.dx = 4
+        dy = self.dy = 0
+        r = self.r = 10
         self.color = 'red'
-        self.id = canvas.create_oval(self.x - self.r, self.y - self.r, 
-                                    self.x + self.r, self.y + self.r, fill=self.color)
+        self.id = canvas.create_oval(x - r, y - r, x + r, y + r, fill=self.color)
 
     def destroy_ball(self):
         canvas.delete(self.id)
 
     def move_ball(self):
-        canvas.move(self.id, 1, 0)
+        canvas.move(self.id, self.dx, self.dy)
+        self.x += self.dx
+        self.y += self.dy
+        if self.y >= BATTLEFIELD_HEIGHT - self.r - self.dy or self.y <= self.r:
+            self.dy = -self.dy
+        self.dy += 1
+        print(canvas.coords(self.id), self.dy)#TEST
         root.after(50, self.move_ball)
 
 def mouse_click(event):#TEST
