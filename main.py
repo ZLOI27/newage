@@ -8,7 +8,7 @@ BATTLEFIELD_HEIGHT = 600
 
 
 def main() -> None:
-    global canvas, target, gun, ball
+    global canvas, target, gun, ball, root
     root = tk.Tk()
     root.title('Game: Guns')
     root.geometry(f'{BATTLEFIELD_WIGTH}x{BATTLEFIELD_HEIGHT}')
@@ -18,6 +18,7 @@ def main() -> None:
     target = Target()
     gun = Gun()
     ball = Ball()
+    target.move_target()
 
     canvas.bind('<Button-1>', mouse_click)
     canvas.bind('<Button-3>', mouse_click2)
@@ -41,6 +42,10 @@ class Target:
 
     def destroy_target(self):
         canvas.delete(self.id) 
+
+    def move_target(self):
+        canvas.move(self.id, 0, 1)
+        root.after(50, target.move_target)
 
 
 class Gun:
@@ -67,14 +72,18 @@ class Ball:
     def destroy_ball(self):
         canvas.delete(self.id)
 
+    def move_ball(self):
+        canvas.move(self.id, 1, 0)
+        root.after(50, self.move_ball)
+
 def mouse_click(event):#TEST
-    global target, canvas
-    target.destroy_target()
+    global target, canvas, ball, gun, root
+    ball.move_ball()
     print('click', event)
 
 
 def mouse_click2(event):#TEST
-    global target, canvas, gun, ball
+    global target, canvas, gun, ball, root
     gun.destroy_gun()
     ball.destroy_ball()
     print(gun.id, event)
