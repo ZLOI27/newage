@@ -34,17 +34,23 @@ def tick():
 
 class Target:
     def __init__(self):
-        x = self.x = randint(100, 200)
-        y = self.y = randint(100, 200)
+        x = self.x = randint(650, 750)
+        y = self.y = randint(50, 550)
         r = self.r = randint(5, 50)
+        self.dx = 0
+        self.dy = 5
         self.color = 'green'
-        self.id = canvas.create_oval(x, y, x + 2 * r, y + 2 * r, fill=self.color)
+        self.id = canvas.create_oval(x - r, y - r, x + r, y + r, fill=self.color)
 
     def destroy_target(self):
         canvas.delete(self.id) 
 
     def move_target(self):
-        canvas.move(self.id, 0, 1)
+        canvas.move(self.id, self.dx, self.dy)
+        self.x += self.dx
+        self.y += self.dy
+        if self.y >= BATTLEFIELD_HEIGHT - self.r or self.y <= self.r:
+            self.dy = -self.dy
         root.after(50, target.move_target)
 
 
