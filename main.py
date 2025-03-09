@@ -30,6 +30,7 @@ def tick():
 
 
 
+
 class Target:
     def __init__(self):
         x = self.x = randint(100, 200)
