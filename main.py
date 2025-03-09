@@ -1,6 +1,7 @@
 import tkinter as tk
 from random import randint
 from random import randrange
+from math import sqrt
 
 
 BATTLEFIELD_WIGTH = 800
@@ -85,7 +86,13 @@ class Ball:
             self.dy = -self.dy
         self.dy += 1
         print(canvas.coords(self.id), self.dy)#TEST
+        self.hit_test()
         root.after(50, self.move_ball)
+
+    def hit_test(self):
+        if int(sqrt((target.x - ball.x) ** 2 + (target.y - ball.y) ** 2)) <= target.r + ball.r:
+            target.destroy_target()
+
 
 def mouse_click(event):#TEST
     global target, canvas, ball, gun, root
