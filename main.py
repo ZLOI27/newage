@@ -26,12 +26,20 @@ def main() -> None:
     root.mainloop()
     print('Goodbye!') #Say it in shell after close window
 
-def tick():
-    target.move()
-    root.after(50, tick) #miliseconds
 
 
+class NewGame:
+    def __init__(self):
+        pass
 
+    def create_target(self):
+        pass
+
+    def create_ball(self):
+        pass
+
+    def create_gun(self):
+        pass
 
 class Target:
     def __init__(self):
