@@ -9,13 +9,14 @@ BATTLEFIELD_HEIGHT = 600
 
 
 def main() -> None:
-    global canvas, target, gun, ball, root
+    global event, canvas, target, gun, ball, root
     root = tk.Tk()
     root.title('Game: Guns')
     root.geometry(f'{BATTLEFIELD_WIGTH}x{BATTLEFIELD_HEIGHT}')
     canvas = tk.Canvas(bg='white', width=BATTLEFIELD_WIGTH, height=BATTLEFIELD_HEIGHT)
     canvas.pack(anchor=tk.CENTER, expand=1)
     
+    print(type(event))
     target = Target()
     gun = Gun()
     ball = Ball()
@@ -64,13 +65,23 @@ class Target:
 
 
 class Gun:
+    FIRST_POINT_X = 20
+    FIRST_POINT_Y = 400
+    SECOND_POINT_X = 50
+    SECOND_POINT_Y = 400
+    WIDTH = 7
+    #x = self.x = event.x
+    #y = self.y = event.y
+
     def __init__(self):
-        self.x = 20
-        self.y = 400
-        self.id = canvas.create_line(self.x, self.y, 50, 400, width=7)#FIX use constant
+        self.id = canvas.create_line(self.FIRST_POINT_X, self.FIRST_POINT_Y, 
+                                     self.SECOND_POINT_X, self.SECOND_POINT_Y, width=self.WIDTH)
 
     def destroy_gun(self):
         canvas.delete(self.id)
+
+    def gun_move(self):
+        canvas.coords(gun.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, 10, 10)
 
 
 class Ball:
@@ -105,6 +116,8 @@ class Ball:
 def mouse_click(event):#TEST
     global target, canvas, ball, gun, root
     ball.move_ball()
+    gun.gun_move()
+    print(event, event.x, event.y)
     print('click', event)
 
 
