@@ -6,6 +6,7 @@ from math import sqrt
 
 BATTLEFIELD_WIGTH = 800
 BATTLEFIELD_HEIGHT = 600
+TIME_DELAY = 20 #miliseconods
 
 
 def main() -> None:
@@ -61,7 +62,7 @@ class Target:
         self.y += self.dy
         if self.y >= BATTLEFIELD_HEIGHT - self.r or self.y <= self.r:
             self.dy = -self.dy
-        root.after(50, target.move_target)
+        root.after(TIME_DELAY, target.move_target)
 
 
 class Gun:
@@ -75,14 +76,17 @@ class Gun:
 
     def __init__(self):
         self.id = canvas.create_line(self.FIRST_POINT_X, self.FIRST_POINT_Y, 
-                                     self.SECOND_POINT_X, self.SECOND_POINT_Y, width=self.WIDTH)
+                                     self.SECOND_POINT_X, self.SECOND_POINT_Y, 
+                                     width=self.WIDTH)
 
     def destroy_gun(self):
         canvas.delete(self.id)
 
     def gun_move(self):
-        canvas.coords(gun.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, canvas.winfo_pointerx() - canvas.winfo_rootx(), canvas.winfo_pointery() - canvas.winfo_rooty())
-        root.after(20, gun.gun_move)
+        canvas.coords(gun.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, 
+                      canvas.winfo_pointerx() - canvas.winfo_rootx(), 
+                      canvas.winfo_pointery() - canvas.winfo_rooty())
+        root.after(TIME_DELAY, gun.gun_move)
 
 
 class Ball:
@@ -105,9 +109,8 @@ class Ball:
         if self.y >= BATTLEFIELD_HEIGHT - self.r - self.dy or self.y <= self.r:
             self.dy = -self.dy
         self.dy += 1
-        #print(canvas.coords(self.id), self.dy)#TEST
         self.hit_test()
-        root.after(50, self.move_ball)
+        root.after(TIME_DELAY, self.move_ball)
 
     def hit_test(self):
         if int(sqrt((target.x - ball.x) ** 2 + (target.y - ball.y) ** 2)) <= target.r + ball.r:
