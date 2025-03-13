@@ -16,7 +16,6 @@ def main() -> None:
     canvas = tk.Canvas(bg='white', width=BATTLEFIELD_WIGTH, height=BATTLEFIELD_HEIGHT)
     canvas.pack(anchor=tk.CENTER, expand=1)
     
-    print(type(event))
     target = Target()
     gun = Gun()
     ball = Ball()
@@ -24,6 +23,7 @@ def main() -> None:
 
     canvas.bind('<Button-1>', mouse_click)
     canvas.bind('<Button-3>', mouse_click2)
+    print(canvas.coords(gun.id), type(canvas.coords(gun.id)))
     root.mainloop()
     print('Goodbye!') #Say it in shell after close window
 
@@ -81,7 +81,8 @@ class Gun:
         canvas.delete(self.id)
 
     def gun_move(self):
-        canvas.coords(gun.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, 10, 10)
+        canvas.coords(gun.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, canvas.winfo_pointerx() - canvas.winfo_rootx(), canvas.winfo_pointery() - canvas.winfo_rooty())
+        root.after(20, gun.gun_move)
 
 
 class Ball:
@@ -104,7 +105,7 @@ class Ball:
         if self.y >= BATTLEFIELD_HEIGHT - self.r - self.dy or self.y <= self.r:
             self.dy = -self.dy
         self.dy += 1
-        print(canvas.coords(self.id), self.dy)#TEST
+        #print(canvas.coords(self.id), self.dy)#TEST
         self.hit_test()
         root.after(50, self.move_ball)
 
@@ -117,7 +118,6 @@ def mouse_click(event):#TEST
     global target, canvas, ball, gun, root
     ball.move_ball()
     gun.gun_move()
-    print(event, event.x, event.y)
     print('click', event)
 
 
