@@ -19,7 +19,7 @@ def main() -> None:
     
     target = Target()
     gun = Gun()
-    ball = Ball()
+    gun.gun_move()
     target.move_target()
 
     canvas.bind('<Button-1>', mouse_click)
@@ -45,13 +45,14 @@ class NewGame:
 
 class Target:
     def __init__(self):
-        x = self.x = randint(650, 750)
-        y = self.y = randint(50, 550)
-        r = self.r = randint(5, 50)
+        self.x = randint(650, 750)
+        self.y = randint(50, 550)
+        self.r = randint(5, 50)
         self.dx = 0
         self.dy = 5
         self.color = 'green'
-        self.id = canvas.create_oval(x - r, y - r, x + r, y + r, fill=self.color)
+        self.id = canvas.create_oval(self.x - self.r, self.y - self.r,
+                                     self.x + self.r, self.y + self.r, fill=self.color)
 
     def destroy_target(self):
         canvas.delete(self.id) 
@@ -62,47 +63,56 @@ class Target:
         self.y += self.dy
         if self.y >= BATTLEFIELD_HEIGHT - self.r or self.y <= self.r:
             self.dy = -self.dy
-        root.after(TIME_DELAY, target.move_target)
+        root.after(TIME_DELAY, self.move_target)
 
 
 class Gun:
     FIRST_POINT_X = 20
     FIRST_POINT_Y = 400
-    SECOND_POINT_X = 50
-    SECOND_POINT_Y = 400
-    WIDTH = 7
-    #x = self.x = event.x
-    #y = self.y = event.y
+    WIDTH = 6
+    GUN_LENGTH = 50
 
     def __init__(self):
+        self.second_point_x = self.FIRST_POINT_X + self.GUN_LENGTH
+        self.second_point_y = self.FIRST_POINT_Y
         self.id = canvas.create_line(self.FIRST_POINT_X, self.FIRST_POINT_Y, 
-                                     self.SECOND_POINT_X, self.SECOND_POINT_Y, 
+                                     self.second_point_x, self.second_point_y, 
                                      width=self.WIDTH)
 
     def destroy_gun(self):
         canvas.delete(self.id)
 
     def gun_move(self):
-        canvas.coords(gun.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, 
-                      canvas.winfo_pointerx() - canvas.winfo_rootx(), 
-                      canvas.winfo_pointery() - canvas.winfo_rooty())
+        x_mouse = canvas.winfo_pointerx() - canvas.winfo_rootx() # coordinates of mouse on canvas
+        y_mouse = canvas.winfo_pointery() - canvas.winfo_rooty()
+        x_vector_mouse = x_mouse - self.FIRST_POINT_X # mouse coordinates relative to FIRST_POINT of gun
+        y_vector_mouse = y_mouse - self.FIRST_POINT_Y
+        hypotenuse = sqrt((x_vector_mouse)**2 + (y_vector_mouse)**2)
+        x_ratio = x_vector_mouse / hypotenuse
+        y_ratio = y_vector_mouse / hypotenuse
+        self.second_point_x = self.FIRST_POINT_X + x_ratio * self.GUN_LENGTH
+        self.second_point_y = self.FIRST_POINT_Y + y_ratio * self.GUN_LENGTH
+        canvas.coords(gun.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, self.second_point_x, self.second_point_y)
         root.after(TIME_DELAY, gun.gun_move)
 
 
 class Ball:
+    RADIUS_BALL = 10
+
     def __init__(self):
-        x = self.x = 50
-        y = self.y = 400
-        dx = self.dx = 4
-        dy = self.dy = 0
-        r = self.r = 10
+        self.x = gun.second_point_x
+        self.y = gun.second_point_y
+        self.dx = 4
+        self.dy = 0
+        self.r = self.RADIUS_BALL
         self.color = 'red'
-        self.id = canvas.create_oval(x - r, y - r, x + r, y + r, fill=self.color)
+        self.id = canvas.create_oval(self.x - self.r, self.y - self.r,
+                                     self.x + self.r, self.y + self.r, fill=self.color)
 
     def destroy_ball(self):
         canvas.delete(self.id)
 
-    def move_ball(self):
+    def shot_ball(self):
         canvas.move(self.id, self.dx, self.dy)
         self.x += self.dx
         self.y += self.dy
@@ -110,16 +120,17 @@ class Ball:
             self.dy = -self.dy
         self.dy += 1
         self.hit_test()
-        root.after(TIME_DELAY, self.move_ball)
+        root.after(TIME_DELAY, self.shot_ball)
 
     def hit_test(self):
-        if int(sqrt((target.x - ball.x) ** 2 + (target.y - ball.y) ** 2)) <= target.r + ball.r:
+        if int(sqrt((target.x - self.x)**2 + (target.y - self.y)**2)) <= target.r + self.r:
             target.destroy_target()
 
 
 def mouse_click(event):#TEST
     global target, canvas, ball, gun, root
-    ball.move_ball()
+    ball = Ball()
+    ball.shot_ball()
     gun.gun_move()
     print('click', event)
 
