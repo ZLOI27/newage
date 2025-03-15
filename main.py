@@ -23,7 +23,6 @@ def main() -> None:
     target.move_target()
 
     canvas.bind('<Button-1>', mouse_click)
-    canvas.bind('<Button-3>', mouse_click2)
     print(canvas.coords(gun.id), type(canvas.coords(gun.id)))
     root.mainloop()
     print('Goodbye!') #Say it in shell after close window
