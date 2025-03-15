@@ -29,6 +29,13 @@ def main() -> None:
     print('Goodbye!') #Say it in shell after close window
 
 
+def mouse_click(event):#TEST
+    global target, canvas, ball, root
+    ball = Ball()
+    ball.shot_ball()
+    gun.gun_move()
+    print('click', event)
+
 
 class NewGame:
     def __init__(self):
@@ -44,12 +51,15 @@ class NewGame:
         pass
 
 class Target:
+    FIRST_VELOCITY_X = -1
+    FIRST_VELOCITY_Y = 5
+
     def __init__(self):
         self.x = randint(650, 750)
         self.y = randint(50, 550)
         self.r = randint(5, 50)
-        self.dx = 0
-        self.dy = 5
+        self.dx = self.FIRST_VELOCITY_X
+        self.dy = self.FIRST_VELOCITY_Y
         self.color = 'green'
         self.id = canvas.create_oval(self.x - self.r, self.y - self.r,
                                      self.x + self.r, self.y + self.r, fill=self.color)
@@ -94,20 +104,23 @@ class Gun:
         self.second_point_y = self.FIRST_POINT_Y + y_ratio * self.GUN_LENGTH
         canvas.coords(gun.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, self.second_point_x, self.second_point_y)
         root.after(TIME_DELAY, gun.gun_move)
+        return (x_ratio, y_ratio)
 
 
 class Ball:
     RADIUS_BALL = 10
+    FIRST_IMPULSE = 20
+    COLOR = 'red'
 
     def __init__(self):
+        self.first_impulse = self.FIRST_IMPULSE
         self.x = gun.second_point_x
         self.y = gun.second_point_y
-        self.dx = 4
-        self.dy = 0
+        self.dx = self.first_impulse * gun.gun_move()[0]
+        self.dy = self.first_impulse * gun.gun_move()[1]
         self.r = self.RADIUS_BALL
-        self.color = 'red'
         self.id = canvas.create_oval(self.x - self.r, self.y - self.r,
-                                     self.x + self.r, self.y + self.r, fill=self.color)
+                                     self.x + self.r, self.y + self.r, fill=self.COLOR)
 
     def destroy_ball(self):
         canvas.delete(self.id)
@@ -116,30 +129,23 @@ class Ball:
         canvas.move(self.id, self.dx, self.dy)
         self.x += self.dx
         self.y += self.dy
-        if self.y >= BATTLEFIELD_HEIGHT - self.r - self.dy or self.y <= self.r:
+        print(self.y, self.dy)
+        if (self.y >= BATTLEFIELD_HEIGHT - self.r - 1) and self.dy <= 1: # fix bug, ball fall under low border
+            self.dy = 0
+        elif (self.y >= BATTLEFIELD_HEIGHT - self.r - self.dy) or self.y <= self.r:
+            self.dy -= 1 # ball jump lower and lower
             self.dy = -self.dy
-        self.dy += 1
+        else:
+            self.dy += 1 # It's give effect gravitation
         self.hit_test()
+        if self.x < 0 or self.x > BATTLEFIELD_WIGTH: # need added " - self.r" for destroy ball abroad border
+            self.destroy_ball()
         root.after(TIME_DELAY, self.shot_ball)
 
     def hit_test(self):
         if int(sqrt((target.x - self.x)**2 + (target.y - self.y)**2)) <= target.r + self.r:
             target.destroy_target()
 
-
-def mouse_click(event):#TEST
-    global target, canvas, ball, gun, root
-    ball = Ball()
-    ball.shot_ball()
-    gun.gun_move()
-    print('click', event)
-
-
-def mouse_click2(event):#TEST
-    global target, canvas, gun, ball, root
-    gun.destroy_gun()
-    ball.destroy_ball()
-    print(gun.id, event)
 
 
 
