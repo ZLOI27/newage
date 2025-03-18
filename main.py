@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import tkinter as tk
 from random import randint
 from random import randrange
@@ -10,48 +12,47 @@ TIME_DELAY = 20 #miliseconods
 
 
 def main() -> None:
-    global event, canvas, target, gun, ball, root
+    global canvas
     root = tk.Tk()
     root.title('Game: Guns')
     root.geometry(f'{BATTLEFIELD_WIGTH}x{BATTLEFIELD_HEIGHT}')
     canvas = tk.Canvas(bg='white', width=BATTLEFIELD_WIGTH, height=BATTLEFIELD_HEIGHT)
     canvas.pack(anchor=tk.CENTER, expand=1)
 
-    gun = Gun()
-    gun.gun_move()
-    game = NewGame(Target)
-    game.create_target()
-
-    canvas.bind('<Button-1>', mouse_click)
+    game = Game(Target, Gun, Ball, root)
+    canvas.bind('<Button-1>', game.mouse_click)
     root.mainloop()
     print('Goodbye!') #Say it in shell after close window
 
 
-def mouse_click(event):
-    ball = Ball()
-    ball.shot_ball()
-    gun.gun_move()
-    print('click', event)
+class Game:
+    def __init__(self, Target, Gun, Ball, root):
+        """ In targets and balls addresses of class objects are stored
+        """
+        self.targets = []
+        self.balls = []
+        self.gun = Gun()
+        self.time_handler(root)
 
-def game() -> None:
-    global gun, target
-    target = Target()
+    def time_handler(self, root):
+        if randint(1, 100) == 100: self.targets.append(Target())
+        self.gun.move_gun()
+        for target in self.targets: target.move_target()
+        for ball in self.balls: ball.move_ball(self.balls, ball)
+        for target in self.targets: 
+            for ball in self.balls:
+                self.hit_test(target, ball)
+        root.after(TIME_DELAY, lambda a=root: self.time_handler(a))
 
+    def mouse_click(self, event):
+        self.balls.append(Ball(self.gun))
+        print('click', event)
 
+    def hit_test(self, target, ball):
+        if int(sqrt((target.x - ball.x)**2 + (target.y - ball.y)**2)) <= target.r + ball.r:
+            target.destroy_target(self.targets, target)
+            ball.destroy_ball(self.balls, ball)
 
-class NewGame:
-    def __init__(self, Target):
-        self.target = Target()
-
-    def create_target(self):
-        self.target.move_target()
-        canvas.after(TIME_DELAY * 10, self.create_target)
-
-    def create_ball(self):
-        pass
-
-    def create_gun(self):
-        pass
 
 class Target:
     FIRST_VELOCITY_X = -1
@@ -64,14 +65,12 @@ class Target:
         self.dx = self.FIRST_VELOCITY_X
         self.dy = self.FIRST_VELOCITY_Y
         self.color = 'green'
-        self.alive = True
         self.id = canvas.create_oval(self.x - self.r, self.y - self.r,
                                      self.x + self.r, self.y + self.r, fill=self.color)
 
-    def destroy_target(self):
+    def destroy_target(self, targets, target):
         canvas.delete(self.id) 
-        self.alive = False
-        print('self', self)
+        targets.remove(target)
 
     def move_target(self):
         canvas.move(self.id, self.dx, self.dy)
@@ -81,9 +80,6 @@ class Target:
             self.dy = -self.dy
         if self.x <= 0 or self.x >= BATTLEFIELD_WIGTH:
             self.destroy_target()
-        if not self.alive:
-            return
-        root.after(TIME_DELAY, self.move_target)
 
 
 class Gun:
@@ -97,18 +93,15 @@ class Gun:
         self.second_point_y = self.FIRST_POINT_Y
         self.x_ratio = 1
         self.y_ratio = 0
-        self.alive = True
         self.id = canvas.create_line(self.FIRST_POINT_X, self.FIRST_POINT_Y, 
                                      self.second_point_x, self.second_point_y, 
                                      width=self.WIDTH)
 
-    def destroy_gun(self):
+    def destroy_gun(self, gun):
         canvas.delete(self.id)
-        self.alive = False
+        del gun
 
-    def gun_move(self):
-        if not self.alive:
-            return
+    def move_gun(self):
         x_mouse = canvas.winfo_pointerx() - canvas.winfo_rootx() # coordinates of mouse on canvas
         y_mouse = canvas.winfo_pointery() - canvas.winfo_rooty()
         x_vector_mouse = x_mouse - self.FIRST_POINT_X # mouse coordinates relative to FIRST_POINT of gun
@@ -118,16 +111,15 @@ class Gun:
         self.y_ratio = y_vector_mouse / hypotenuse
         self.second_point_x = self.FIRST_POINT_X + self.x_ratio * self.GUN_LENGTH
         self.second_point_y = self.FIRST_POINT_Y + self.y_ratio * self.GUN_LENGTH
-        canvas.coords(gun.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, self.second_point_x, self.second_point_y)
-        root.after(TIME_DELAY, gun.gun_move)
+        canvas.coords(self.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, self.second_point_x, self.second_point_y)
 
 
 class Ball:
     RADIUS_BALL = 10
-    FIRST_IMPULSE = 20
+    FIRST_IMPULSE = 30
     COLOR = 'red'
 
-    def __init__(self):
+    def __init__(self, gun):
         self.first_impulse = self.FIRST_IMPULSE
         self.x = gun.second_point_x
         self.y = gun.second_point_y
@@ -137,10 +129,11 @@ class Ball:
         self.id = canvas.create_oval(self.x - self.r, self.y - self.r,
                                      self.x + self.r, self.y + self.r, fill=self.COLOR)
 
-    def destroy_ball(self):
+    def destroy_ball(self, balls, ball):
         canvas.delete(self.id)
+        balls.remove(ball)
 
-    def shot_ball(self):
+    def move_ball(self, balls, ball):
         canvas.move(self.id, self.dx, self.dy)
         self.x += self.dx
         self.y += self.dy
@@ -152,18 +145,9 @@ class Ball:
             self.dy = -self.dy
         else:
             self.dy += 1 # It's give effect gravitation
-        self.hit_test()
         if self.x < 0 or self.x > BATTLEFIELD_WIGTH: # need added " - self.r" for destroy ball abroad border
-            self.destroy_ball()
+            self.destroy_ball(balls, ball)
             return
-        root.after(TIME_DELAY, self.shot_ball)
-
-    def hit_test(self):
-        if int(sqrt((target.x - self.x)**2 + (target.y - self.y)**2)) <= target.r + self.r:
-            target.destroy_target()
-
-
-
 
 
 if __name__ == '__main__':
