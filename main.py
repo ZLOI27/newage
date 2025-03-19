@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import tkinter as tk
-from random import randint
+from random import randint, choice
 from random import randrange
 from math import sqrt
 
@@ -20,7 +20,9 @@ def main() -> None:
     canvas.pack(anchor=tk.CENTER, expand=1)
 
     game = Game(Target, Gun, Ball, root)
-    canvas.bind('<Button-1>', game.mouse_click)
+    #canvas.bind('<Button-1>', game.mouse_click)
+    canvas.bind('<ButtonPress-1>', game.mouse_click)
+    canvas.bind('<ButtonRelease-1>', game.mouse_unclick)
     root.mainloop()
     print('Goodbye!') #Say it in shell after close window
 
@@ -33,6 +35,7 @@ class Game:
         self.balls = []
         self.gun = Gun()
         self.time_handler(root)
+        self.mouse_btn_keep = False
 
     def time_handler(self, root):
         if randint(1, 100) == 100: self.targets.append(Target())
@@ -44,9 +47,21 @@ class Game:
                 self.hit_test(target, ball)
         root.after(TIME_DELAY, lambda a=root: self.time_handler(a))
 
-    def mouse_click(self, event):
+    def mouse_unclick(self, event):
+        self.mouse_btn_keep = False
         self.balls.append(Ball(self.gun))
         print('click', event)
+
+    def mouse_click(self, event):
+        self.mouse_btn_keep = True
+        self.mouse_keep()
+
+    def mouse_keep(self):
+        if self.mouse_btn_keep:
+            if self.gun.power < 50:
+                self.gun.power += 1
+            print(self.gun.power)
+            canvas.after(TIME_DELAY, self.mouse_keep)
 
     def hit_test(self, target, ball):
         if int(sqrt((target.x - ball.x)**2 + (target.y - ball.y)**2)) <= target.r + ball.r:
@@ -64,7 +79,7 @@ class Target:
         self.r = randint(10, 50)
         self.dx = self.FIRST_VELOCITY_X
         self.dy = self.FIRST_VELOCITY_Y
-        self.color = 'green'
+        self.color = choice(['green', 'red', 'blue', 'yellow'])
         self.id = canvas.create_oval(self.x - self.r, self.y - self.r,
                                      self.x + self.r, self.y + self.r, fill=self.color)
 
@@ -85,14 +100,16 @@ class Target:
 class Gun:
     FIRST_POINT_X = 20
     FIRST_POINT_Y = 400
-    WIDTH = 6
+    WIDTH = 5
     GUN_LENGTH = 50
+    FIRST_POWER = 0
 
     def __init__(self):
         self.second_point_x = self.FIRST_POINT_X + self.GUN_LENGTH
         self.second_point_y = self.FIRST_POINT_Y
         self.x_ratio = 1
         self.y_ratio = 0
+        self.power = self.FIRST_POWER 
         self.id = canvas.create_line(self.FIRST_POINT_X, self.FIRST_POINT_Y, 
                                      self.second_point_x, self.second_point_y, 
                                      width=self.WIDTH)
@@ -109,18 +126,19 @@ class Gun:
         hypotenuse = sqrt((x_vector_mouse)**2 + (y_vector_mouse)**2)
         self.x_ratio = x_vector_mouse / hypotenuse
         self.y_ratio = y_vector_mouse / hypotenuse
-        self.second_point_x = self.FIRST_POINT_X + self.x_ratio * self.GUN_LENGTH
-        self.second_point_y = self.FIRST_POINT_Y + self.y_ratio * self.GUN_LENGTH
+        self.second_point_x = self.FIRST_POINT_X + self.x_ratio * (self.GUN_LENGTH + self.power)
+        self.second_point_y = self.FIRST_POINT_Y + self.y_ratio * (self.GUN_LENGTH + self.power)
         canvas.coords(self.id, self.FIRST_POINT_X, self.FIRST_POINT_Y, self.second_point_x, self.second_point_y)
 
 
 class Ball:
     RADIUS_BALL = 10
-    FIRST_IMPULSE = 30
+    FIRST_IMPULSE = 10
     COLOR = 'red'
 
     def __init__(self, gun):
-        self.first_impulse = self.FIRST_IMPULSE
+        self.first_impulse = self.FIRST_IMPULSE + gun.power
+        gun.power = gun.FIRST_POWER
         self.x = gun.second_point_x
         self.y = gun.second_point_y
         self.dx = self.first_impulse * gun.x_ratio
@@ -137,7 +155,7 @@ class Ball:
         canvas.move(self.id, self.dx, self.dy)
         self.x += self.dx
         self.y += self.dy
-        print(self.y, self.dy)
+        #print(self.y, self.dy)
         if (self.y >= BATTLEFIELD_HEIGHT - self.r - 1) and self.dy <= 1: # fix bug, ball fall under low border
             self.dy = 0
         elif (self.y >= BATTLEFIELD_HEIGHT - self.r - self.dy) or self.y <= self.r:
