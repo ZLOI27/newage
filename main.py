@@ -19,7 +19,7 @@ def main() -> None:
     canvas = tk.Canvas(bg='white', width=BATTLEFIELD_WIGTH, height=BATTLEFIELD_HEIGHT)
     canvas.pack(anchor=tk.CENTER, expand=1)
 
-    game = Game(Target, Gun, Ball, root)
+    game = Game(Target, Gun, Ball, root, canvas)
     #canvas.bind('<Button-1>', game.mouse_click)
     canvas.bind('<ButtonPress-1>', game.mouse_click)
     canvas.bind('<ButtonRelease-1>', game.mouse_unclick)
@@ -28,17 +28,17 @@ def main() -> None:
 
 
 class Game:
-    def __init__(self, Target, Gun, Ball, root):
+    def __init__(self, Target, Gun, Ball, root, canvas):
         """ In targets and balls addresses of class objects are stored
         """
         self.targets = []
         self.balls = []
-        self.gun = Gun()
+        self.gun = Gun(canvas)
         self.time_handler(root)
         self.mouse_btn_keep = False
 
     def time_handler(self, root):
-        if randint(1, 100) == 100: self.targets.append(Target())
+        if randint(1, 100) == 100: self.targets.append(Target(canvas))
         self.gun.move_gun()
         for target in self.targets: target.move_target()
         for ball in self.balls: ball.move_ball(self.balls, ball)
@@ -49,7 +49,7 @@ class Game:
 
     def mouse_unclick(self, event):
         self.mouse_btn_keep = False
-        self.balls.append(Ball(self.gun))
+        self.balls.append(Ball(self.gun, canvas))
         print('click', event)
 
     def mouse_click(self, event):
@@ -73,7 +73,8 @@ class Target:
     FIRST_VELOCITY_X = -1
     FIRST_VELOCITY_Y = 5
 
-    def __init__(self):
+    def __init__(self, canvas):
+        self.canvas = canvas
         self.x = randint(650, 750)
         self.y = randint(50, 550)
         self.r = randint(10, 50)
@@ -104,7 +105,8 @@ class Gun:
     GUN_LENGTH = 50
     FIRST_POWER = 0
 
-    def __init__(self):
+    def __init__(self, canvas):
+        self.canvas = canvas
         self.second_point_x = self.FIRST_POINT_X + self.GUN_LENGTH
         self.second_point_y = self.FIRST_POINT_Y
         self.x_ratio = 1
@@ -136,7 +138,8 @@ class Ball:
     FIRST_IMPULSE = 10
     COLOR = 'red'
 
-    def __init__(self, gun):
+    def __init__(self, gun, canvas):
+        self.canvas = canvas
         self.first_impulse = self.FIRST_IMPULSE + gun.power
         gun.power = gun.FIRST_POWER
         self.x = gun.second_point_x
