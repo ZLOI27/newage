@@ -35,14 +35,22 @@ def main() -> None:
 
 class Game:
     PROBABILITY_SPAWN_TARGET = 100 # Than number more, that probability less
+    INIT_SCORE = 8
+    SCORE_LOSS = 1
+    SCORE_GAIN = 2
+    Y_TEXT_SCORE = 30
+    FONT_SCORE = 20
 
     def __init__(self, Target, Gun, Ball, root):
         """In targets and balls addresses of class objects are stored"""
         self.targets = []
         self.balls = []
         self.gun = Gun()
-        self.time_handler(root)
         self.mouse_btn_keep = False
+        self.score = self.INIT_SCORE
+        self.time_handler(root)
+        self.id_score = canvas.create_text((BATTLEFIELD_WIGTH / 2), self.Y_TEXT_SCORE,
+                                           font=self.FONT_SCORE, text=f'Score: {self.score}')
 
     def time_handler(self, root):
         if randint(1, self.PROBABILITY_SPAWN_TARGET) == 1: self.targets.append(Target())
@@ -51,12 +59,16 @@ class Game:
         for ball in self.balls: ball.move_ball(self.balls, ball)
         for target in self.targets: 
             for ball in self.balls:
-                self.hit_test(target, ball)
+                if self.hit_test(target, ball):
+                    self.score += self.SCORE_GAIN
+                    self.refresh_score()
         root.after(TIME_DELAY, lambda a=root: self.time_handler(a))
 
     def mouse_unclick(self, event):
         self.mouse_btn_keep = False
         self.balls.append(Ball(self.gun))
+        self.score -= self.SCORE_LOSS
+        self.refresh_score()
         print('click', event)
 
     def mouse_click(self, event):
@@ -65,7 +77,7 @@ class Game:
 
     def mouse_keep(self):
         if self.mouse_btn_keep:
-            if self.gun.power < 50:
+            if self.gun.power < self.gun.MAX_POWER:
                 self.gun.power += 1
             print(self.gun.power)
             canvas.after(TIME_DELAY, self.mouse_keep)
@@ -74,6 +86,13 @@ class Game:
         if int(sqrt((target.x - ball.x)**2 + (target.y - ball.y)**2)) <= target.r + ball.r:
             target.destroy_target(self.targets, target)
             ball.destroy_ball(self.balls, ball)
+            return 1
+        return 0
+
+    def refresh_score(self):
+        canvas.delete(self.id_score)
+        self.id_score = canvas.create_text((BATTLEFIELD_WIGTH / 2), self.Y_TEXT_SCORE,
+                                           font=self.FONT_SCORE, text=f'Score: {self.score}')
 
 
 class Target:
@@ -114,9 +133,10 @@ class Target:
 class Gun:
     FIRST_POINT_X = 20
     FIRST_POINT_Y = 400
-    WIDTH = 5
+    GUN_WIDTH = 5
     GUN_LENGTH = 50
     FIRST_POWER = 0
+    MAX_POWER = 50
 
     def __init__(self):
         self.second_point_x = self.FIRST_POINT_X + self.GUN_LENGTH
@@ -126,7 +146,7 @@ class Gun:
         self.power = self.FIRST_POWER 
         self.id = canvas.create_line(self.FIRST_POINT_X, self.FIRST_POINT_Y, 
                                      self.second_point_x, self.second_point_y, 
-                                     width=self.WIDTH)
+                                     width=self.GUN_WIDTH)
 
     def destroy_gun(self, gun):
         canvas.delete(self.id)
