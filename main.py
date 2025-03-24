@@ -8,37 +8,44 @@ from math import sqrt
 
 BATTLEFIELD_WIGTH = 800
 BATTLEFIELD_HEIGHT = 600
-TIME_DELAY = 20 #miliseconods
+TIME_DELAY = 20 # Miliseconods
 
 
 def main() -> None:
     global canvas
+
     root = tk.Tk()
     root.title('Game: Guns')
     root.geometry(f'{BATTLEFIELD_WIGTH}x{BATTLEFIELD_HEIGHT}')
+
     canvas = tk.Canvas(bg='white', width=BATTLEFIELD_WIGTH, height=BATTLEFIELD_HEIGHT)
     canvas.pack(anchor=tk.CENTER, expand=1)
 
-    game = Game(Target, Gun, Ball, root, canvas)
-    #canvas.bind('<Button-1>', game.mouse_click)
+    main_menu = tk.Menu()
+    main_menu.add_cascade(label='Menu')
+    root.config(menu=main_menu)
+
+    game = Game(Target, Gun, Ball, root)
+
     canvas.bind('<ButtonPress-1>', game.mouse_click)
     canvas.bind('<ButtonRelease-1>', game.mouse_unclick)
+
     root.mainloop()
-    print('Goodbye!') #Say it in shell after close window
 
 
 class Game:
-    def __init__(self, Target, Gun, Ball, root, canvas):
-        """ In targets and balls addresses of class objects are stored
-        """
+    PROBABILITY_SPAWN_TARGET = 100 # Than number more, that probability less
+
+    def __init__(self, Target, Gun, Ball, root):
+        """In targets and balls addresses of class objects are stored"""
         self.targets = []
         self.balls = []
-        self.gun = Gun(canvas)
+        self.gun = Gun()
         self.time_handler(root)
         self.mouse_btn_keep = False
 
     def time_handler(self, root):
-        if randint(1, 100) == 100: self.targets.append(Target(canvas))
+        if randint(1, self.PROBABILITY_SPAWN_TARGET) == 1: self.targets.append(Target())
         self.gun.move_gun()
         for target in self.targets: target.move_target()
         for ball in self.balls: ball.move_ball(self.balls, ball)
@@ -49,7 +56,7 @@ class Game:
 
     def mouse_unclick(self, event):
         self.mouse_btn_keep = False
-        self.balls.append(Ball(self.gun, canvas))
+        self.balls.append(Ball(self.gun))
         print('click', event)
 
     def mouse_click(self, event):
@@ -72,15 +79,21 @@ class Game:
 class Target:
     FIRST_VELOCITY_X = -1
     FIRST_VELOCITY_Y = 5
+    COLORS_TARGET = ['green', 'red', 'blue', 'yellow']
+    LEFT_BORDER_SPAWN = 650
+    RIGHT_BORDER_SPAWN = 750
+    UP_BORDER_SPAWN = 50
+    LOW_BORDER_SPAWN = 550
+    MAX_RADIUS = 50
+    MIN_RADIUS = 10
 
-    def __init__(self, canvas):
-        self.canvas = canvas
-        self.x = randint(650, 750)
-        self.y = randint(50, 550)
-        self.r = randint(10, 50)
+    def __init__(self):
+        self.x = randint(self.LEFT_BORDER_SPAWN, self.RIGHT_BORDER_SPAWN)
+        self.y = randint(self.UP_BORDER_SPAWN, self.LOW_BORDER_SPAWN)
+        self.r = randint(self.MIN_RADIUS, self.MAX_RADIUS)
         self.dx = self.FIRST_VELOCITY_X
         self.dy = self.FIRST_VELOCITY_Y
-        self.color = choice(['green', 'red', 'blue', 'yellow'])
+        self.color = choice(self.COLORS_TARGET)
         self.id = canvas.create_oval(self.x - self.r, self.y - self.r,
                                      self.x + self.r, self.y + self.r, fill=self.color)
 
@@ -105,8 +118,7 @@ class Gun:
     GUN_LENGTH = 50
     FIRST_POWER = 0
 
-    def __init__(self, canvas):
-        self.canvas = canvas
+    def __init__(self):
         self.second_point_x = self.FIRST_POINT_X + self.GUN_LENGTH
         self.second_point_y = self.FIRST_POINT_Y
         self.x_ratio = 1
@@ -121,9 +133,9 @@ class Gun:
         del gun
 
     def move_gun(self):
-        x_mouse = canvas.winfo_pointerx() - canvas.winfo_rootx() # coordinates of mouse on canvas
+        x_mouse = canvas.winfo_pointerx() - canvas.winfo_rootx() # Coordinates of mouse on canvas
         y_mouse = canvas.winfo_pointery() - canvas.winfo_rooty()
-        x_vector_mouse = x_mouse - self.FIRST_POINT_X # mouse coordinates relative to FIRST_POINT of gun
+        x_vector_mouse = x_mouse - self.FIRST_POINT_X # Mouse coordinates relative to FIRST_POINT of gun
         y_vector_mouse = y_mouse - self.FIRST_POINT_Y
         hypotenuse = sqrt((x_vector_mouse)**2 + (y_vector_mouse)**2)
         self.x_ratio = x_vector_mouse / hypotenuse
@@ -137,9 +149,10 @@ class Ball:
     RADIUS_BALL = 10
     FIRST_IMPULSE = 10
     COLOR = 'red'
+    LOSS_IMPULSE = 1
+    GRAVITATION = 1
 
-    def __init__(self, gun, canvas):
-        self.canvas = canvas
+    def __init__(self, gun):
         self.first_impulse = self.FIRST_IMPULSE + gun.power
         gun.power = gun.FIRST_POWER
         self.x = gun.second_point_x
@@ -158,15 +171,14 @@ class Ball:
         canvas.move(self.id, self.dx, self.dy)
         self.x += self.dx
         self.y += self.dy
-        #print(self.y, self.dy)
-        if (self.y >= BATTLEFIELD_HEIGHT - self.r - 1) and self.dy <= 1: # fix bug, ball fall under low border
+        if (self.y >= BATTLEFIELD_HEIGHT - self.r - 1) and self.dy <= 1: # This fix bug, when ball fall under border
             self.dy = 0
         elif (self.y >= BATTLEFIELD_HEIGHT - self.r - self.dy) or self.y <= self.r:
-            self.dy -= 1 # ball jump lower and lower
+            self.dy -= self.LOSS_IMPULSE 
             self.dy = -self.dy
         else:
-            self.dy += 1 # It's give effect gravitation
-        if self.x < 0 or self.x > BATTLEFIELD_WIGTH: # need added " - self.r" for destroy ball abroad border
+            self.dy += self.GRAVITATION
+        if self.x < 0 or self.x > BATTLEFIELD_WIGTH: # Need added " - self.r" for destroy ball abroad border
             self.destroy_ball(balls, ball)
             return
 
