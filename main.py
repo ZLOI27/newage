@@ -11,6 +11,8 @@ BATTLEFIELD_HEIGHT = 600
 TIME_DELAY = 20 # Miliseconods
 
 
+from tkinter import font
+ 
 def main() -> None:
     global canvas
 
@@ -27,6 +29,9 @@ def main() -> None:
 
     game = Game(Target, Gun, Ball, root)
 
+    for font_name in font.names():
+        print(font_name)
+
     canvas.bind('<ButtonPress-1>', game.mouse_click)
     canvas.bind('<ButtonRelease-1>', game.mouse_unclick)
 
@@ -39,7 +44,7 @@ class Game:
     SCORE_LOSS = 1
     SCORE_GAIN = 2
     Y_TEXT_SCORE = 30
-    FONT_SCORE = 20
+    FONT_SCORE = "Arial 40"
 
     def __init__(self, Target, Gun, Ball, root):
         """In targets and balls addresses of class objects are stored"""
