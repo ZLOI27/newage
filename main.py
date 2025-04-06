@@ -3,6 +3,7 @@
 import tkinter as tk
 from random import randint, choice
 from random import randrange
+from time import sleep
 from math import sqrt
 
 
@@ -23,14 +24,15 @@ def main() -> None:
     canvas = tk.Canvas(bg='white', width=BATTLEFIELD_WIGTH, height=BATTLEFIELD_HEIGHT)
     canvas.pack(anchor=tk.CENTER, expand=1)
 
-    main_menu = tk.Menu()
-    main_menu.add_cascade(label='Menu')
-    root.config(menu=main_menu)
-
     game = Game(Target, Gun, Ball, root)
 
-    for font_name in font.names():
-        print(font_name)
+    main_menu = tk.Menu()
+
+    game_menu = tk.Menu()
+    game_menu.add_command(label='Exit', command=exit)
+
+    main_menu.add_cascade(label='Game menu', menu=game_menu)
+    root.config(menu=main_menu)
 
     canvas.bind('<ButtonPress-1>', game.mouse_click)
     canvas.bind('<ButtonRelease-1>', game.mouse_unclick)
@@ -38,16 +40,19 @@ def main() -> None:
     root.mainloop()
 
 
+
 class Game:
+    GAME_OVER_SLEEP = 5
     PROBABILITY_SPAWN_TARGET = 100 # Than number more, that probability less
-    INIT_SCORE = 8
+    INIT_SCORE = 20 
     SCORE_LOSS = 1
     SCORE_GAIN = 2
     Y_TEXT_SCORE = 30
     FONT_SCORE = "Arial 40"
 
     def __init__(self, Target, Gun, Ball, root):
-        """In targets and balls addresses of class objects are stored"""
+        """In targets[] and balls[] addresses of class objects are stored"""
+        self.root = root
         self.targets = []
         self.balls = []
         self.gun = Gun()
@@ -60,7 +65,11 @@ class Game:
     def time_handler(self, root):
         if randint(1, self.PROBABILITY_SPAWN_TARGET) == 1: self.targets.append(Target())
         self.gun.move_gun()
-        for target in self.targets: target.move_target()
+        if self.score == 0:
+            self.game_over()
+            return
+        for target in self.targets: 
+            score = target.move_target(self.targets, target, self.score)
         for ball in self.balls: ball.move_ball(self.balls, ball)
         for target in self.targets: 
             for ball in self.balls:
@@ -74,7 +83,7 @@ class Game:
         self.balls.append(Ball(self.gun))
         self.score -= self.SCORE_LOSS
         self.refresh_score()
-        print('click', event)
+        print('click', event) # TEST
 
     def mouse_click(self, event):
         self.mouse_btn_keep = True
@@ -84,7 +93,7 @@ class Game:
         if self.mouse_btn_keep:
             if self.gun.power < self.gun.MAX_POWER:
                 self.gun.power += 1
-            print(self.gun.power)
+            print(self.gun.power) # TEST
             canvas.after(TIME_DELAY, self.mouse_keep)
 
     def hit_test(self, target, ball):
@@ -95,15 +104,18 @@ class Game:
         return 0
 
     def refresh_score(self):
-        canvas.delete(self.id_score)
-        self.id_score = canvas.create_text((BATTLEFIELD_WIGTH / 2), self.Y_TEXT_SCORE,
-                                           font=self.FONT_SCORE, text=f'Score: {self.score}')
+        canvas.itemconfig(self.id_score, text=f'Score: {self.score}')
+
+    def game_over(self):
+        canvas.create_text((BATTLEFIELD_WIGTH / 2), (BATTLEFIELD_HEIGHT / 2),
+                           font=self.FONT_SCORE, text=f'GAME OVER')
 
 
 class Target:
     FIRST_VELOCITY_X = -1
     FIRST_VELOCITY_Y = 5
     COLORS_TARGET = ['green', 'red', 'blue', 'yellow']
+    PENALTY_LOSS_TARGET = 3
     LEFT_BORDER_SPAWN = 650
     RIGHT_BORDER_SPAWN = 750
     UP_BORDER_SPAWN = 50
@@ -125,14 +137,16 @@ class Target:
         canvas.delete(self.id) 
         targets.remove(target)
 
-    def move_target(self):
+    def move_target(self, targets, target, score):
         canvas.move(self.id, self.dx, self.dy)
         self.x += self.dx
         self.y += self.dy
         if self.y >= BATTLEFIELD_HEIGHT - self.r or self.y <= self.r:
             self.dy = -self.dy
         if self.x <= 0 or self.x >= BATTLEFIELD_WIGTH:
-            self.destroy_target()
+            self.destroy_target(targets, target)
+            return (score - self.PENALTY_LOSS_TARGET)
+        return score
 
 
 class Gun:
