@@ -5,14 +5,13 @@ from random import randint, choice
 from random import randrange
 from time import sleep
 from math import sqrt
+from tkinter import font
 
 
 BATTLEFIELD_WIGTH = 800
 BATTLEFIELD_HEIGHT = 600
 TIME_DELAY = 20 # Miliseconods
 
-
-from tkinter import font
  
 def main() -> None:
     global canvas
